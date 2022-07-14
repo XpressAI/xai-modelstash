@@ -238,6 +238,47 @@ class DownloadLinkfromModelStash(Component):
             print(f"Model {model_name} not found in model stash!")
 
 
+
+@xai_component
+class SaveKerasModelInModelStash(Component):
+    model: InArg[keras.Sequential]
+    experiment_name: InArg[str]
+    metrics: InArg[Dict[str, float]]
+
+    def __init__(self):
+        self.done = False
+        self.model = InArg.empty()
+        self.experiment_name = InArg.empty()
+        self.metrics = InArg.empty()
+
+    def execute(self, ctx) -> None:
+
+        import json
+
+        config = self.execution_context.args
+
+        if not os.path.exists(os.path.join('..', 'experiments')):
+            os.mkdir(os.path.join('..', 'experiments'))
+
+        exp_dir = os.path.join('..', 'experiments', config.name)
+
+        if os.path.exists(exp_dir):
+            exp_dir = exp_dir + '-' + datetime.now().strftime('%Y%m%d-%H:%M:%S')
+        os.mkdir(exp_dir)
+
+        self.model.value.save(os.path.join(exp_dir, 'model.h5'))
+
+        eval_json = json.dumps(self.metrics.value, sort_keys=True, indent=4)
+        with open(os.path.join(exp_dir, 'eval.json'), 'w') as f:
+            f.write(eval_json)
+
+        config_json = json.dumps(vars(config), sort_keys=True, indent=4)
+        with open(os.path.join(exp_dir, 'conf.json'), 'w') as f:
+            f.write(config_json)
+
+        os.system("git add . && git commit -m 'experiment %s'" % (exp_dir))
+        self.done = True
+
 @xai_component
 class LoadfromModelStash(Component):
 
