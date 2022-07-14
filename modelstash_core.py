@@ -254,6 +254,7 @@ class SaveKerasModelInModelStash(Component):
     def execute(self, ctx) -> None:
 
         import json
+        from datetime import datetime
 
         config = self.execution_context.args
 
